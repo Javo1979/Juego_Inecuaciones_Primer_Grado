@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Inecuaciones</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Orbitron:wght@700&display=swap');
+
+        :root {
+            --primary-color: #0a192f;
+            --secondary-color: #112240;
+            --accent-color: #64ffda;
+            --highlight-color: #ccd6f6;
+            --text-color: #8892b0;
+            --success-color: #64ffda;
+            --error-color: #ff5555;
+        }
+
+        body {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            font-family: 'Roboto Mono', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            background-color: var(--secondary-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 0 25px rgba(100, 255, 218, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-color);
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 15px var(--accent-color);
+        }
+        
+        #info-display {
+            display: flex;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--highlight-color);
+            margin-bottom: 1.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid #1d3b5f;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        #mision-nombre {
+            color: var(--highlight-color);
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            height: 30px;
+        }
+
+        #problema {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 1.5rem 0;
+            color: var(--highlight-color);
+        }
+        
+        .input-group {
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .simbolo-btn {
+            background-color: var(--primary-color);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .simbolo-btn.selected {
+            background-color: var(--accent-color);
+            color: var(--primary-color);
+        }
+
+        input[type="text"] {
+            background-color: var(--primary-color);
+            border: 2px solid var(--accent-color);
+            color: var(--highlight-color);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.5rem;
+            text-align: center;
+            border-radius: 4px;
+            width: 100px;
+            padding: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 8px var(--accent-color);
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: var(--primary-color);
+            border: none;
+            border-radius: 5px;
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 0.5rem;
+        }
+
+        button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        #siguiente-btn {
+            display: none;
+            background-color: var(--highlight-color);
+        }
+        #reiniciar-btn { display: none; }
+        
+        #feedback {
+            margin-top: 1.5rem;
+            font-size: 1.1rem;
+            height: 30px;
+            font-weight: bold;
+        }
+
+        .feedback-correct { color: var(--success-color); }
+        .feedback-incorrect { color: var(--error-color); }
+        
+        .progress-bar-container {
+            width: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #1d3b5f;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: var(--accent-color);
+            border-radius: 5px;
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Control de Inecuaciones</h1>
+
+        <div id="info-display">
+            <span id="score">Calificación: 0 / 10</span>
+        </div>
+        
+        <div class="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
+        
+        <h3 id="mision-nombre"></h3>
+        <div id="problema"></div>
+        
+        <div id="input-area"></div>
+        
+        <div class="controls">
+            <button id="verificar-btn">Estabilizar</button>
+            <button id="siguiente-btn">Siguiente Parámetro</button>
+            <button id="reiniciar-btn">Nueva Simulación</button>
+        </div>
+        <div id="feedback"></div>
+    </div>
+
+    <script>
+        const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        const misiones = [
+            {
+                nombre: "Parámetro 1: Calibración Básica",
+                generator: () => {
+                    const a = randInt(5, 15);
+                    const b = randInt(1, 10);
+                    const resultado = b - a;
+                    return {
+                        problema: `x + ${a} > ${b}`,
+                        simboloCorrecto: ">",
+                        valorCorrecto: resultado
+                    };
+                }
+            },
+            {
+                nombre: "Parámetro 2: Multiplicación Positiva",
+                generator: () => {
+                    const a = randInt(2, 6);
+                    const b = a * randInt(3, 8);
+                    const resultado = b / a;
+                    return {
+                        problema: `${a}x ≤ ${b}`,
+                        simboloCorrecto: "≤",
+                        valorCorrecto: resultado
+                    };
+                }
+            },
+            {
+                nombre: "Parámetro 3: ¡Inversión de Flujo!",
+                generator: () => {
+                    const a = randInt(-6, -2);
+                    const b = a * randInt(-5, -2);
+                    const resultado = b / a;
+                    return {
+                        problema: `${a}x > ${b}`,
+                        simboloCorrecto: "<",
+                        valorCorrecto: resultado
+                    };
+                }
+            },
+            {
+                nombre: "Parámetro 4: Operación Combinada",
+                generator: () => {
+                    const a = randInt(2, 5);
+                    const b = randInt(1, 10);
+                    const c = a * randInt(5, 10) + b;
+                    const resultado = (c - b) / a;
+                     return {
+                        problema: `${a}x + ${b} ≥ ${c}`,
+                        simboloCorrecto: "≥",
+                        valorCorrecto: resultado
+                    };
+                }
+            },
+            {
+                nombre: "Parámetro 5: Presupuesto Máximo",
+                generator: () => {
+                    const costo = randInt(5, 10);
+                    const presupuesto = costo * randInt(8, 15) + randInt(1,costo-1);
+                    const resultado = Math.floor(presupuesto / costo);
+                    return {
+                        problema: `Presupuesto: $${presupuesto}. Costo por item: $${costo}. ¿Items máximos a comprar? (x)`,
+                        simboloCorrecto: "≤",
+                        valorCorrecto: resultado
+                    };
+                }
+            }
+        ];
+
+        let misionActual = 0;
+        let misionData = {};
+        let puntuacion = 0;
+        let simboloSeleccionado = '';
+        
+        const misionNombreDisplay = document.getElementById('mision-nombre');
+        const problemaDiv = document.getElementById('problema');
+        const inputArea = document.getElementById('input-area');
+        const feedbackDiv = document.getElementById('feedback');
+        const verificarBtn = document.getElementById('verificar-btn');
+        const siguienteBtn = document.getElementById('siguiente-btn');
+        const reiniciarBtn = document.getElementById('reiniciar-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const scoreDisplay = document.getElementById('score');
+
+        function updateInfoDisplay() {
+            scoreDisplay.textContent = `Calificación: ${puntuacion} / 10`;
+        }
+
+        function updateProgressBar() {
+            const progress = (misionActual / misiones.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function cargarMision(index) {
+            const mision = misiones[index];
+            misionData = mision.generator();
+            
+            misionNombreDisplay.textContent = mision.nombre;
+            problemaDiv.innerHTML = misionData.problema;
+            
+            inputArea.innerHTML = `
+                <div class="input-group">
+                    <span>x</span>
+                    <button class="simbolo-btn" data-simbolo=">">&gt;</button>
+                    <button class="simbolo-btn" data-simbolo="<">&lt;</button>
+                    <button class="simbolo-btn" data-simbolo="≥">≥</button>
+                    <button class="simbolo-btn" data-simbolo="≤">≤</button>
+                    <input type="text" id="valor-respuesta" placeholder="#">
+                </div>
+            `;
+            
+            feedbackDiv.textContent = 'Encuentra el rango de operación de x.';
+            feedbackDiv.className = '';
+            
+            verificarBtn.style.display = 'inline-block';
+            verificarBtn.disabled = false;
+            siguienteBtn.style.display = 'none';
+            reiniciarBtn.style.display = 'none';
+
+            document.querySelectorAll('.simbolo-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.simbolo-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    simboloSeleccionado = btn.dataset.simbolo;
+                });
+            });
+
+            updateProgressBar();
+            updateInfoDisplay();
+        }
+        
+        function verificarRespuesta() {
+            const valorUser = document.getElementById('valor-respuesta').value.trim();
+            const esCorrecto = simboloSeleccionado === misionData.simboloCorrecto && valorUser == misionData.valorCorrecto;
+            
+            if (esCorrecto) {
+                puntuacion += 2;
+                feedbackDiv.textContent = '¡Sistema estable! Parámetros correctos.';
+                feedbackDiv.className = 'feedback-correct';
+            } else {
+                feedbackDiv.textContent = '¡Alerta de inestabilidad! Revisa tus cálculos.';
+                feedbackDiv.className = 'feedback-incorrect';
+            }
+            
+            verificarBtn.disabled = true;
+            
+            if (misionActual < misiones.length - 1) {
+                siguienteBtn.style.display = 'inline-block';
+            } else {
+                setTimeout(() => {
+                    misionNombreDisplay.textContent = "¡Simulación Completada!";
+                    problemaDiv.innerHTML = `Calificación Final: ${puntuacion} / 10. ¡Eres un/a experto/a en control de sistemas!`;
+                    inputArea.innerHTML = '';
+                    verificarBtn.style.display = 'none';
+                    reiniciarBtn.style.display = 'inline-block';
+                    misionActual++;
+                    updateProgressBar();
+                }, 1500);
+            }
+            updateInfoDisplay();
+        }
+        
+        verificarBtn.addEventListener('click', verificarRespuesta);
+
+        inputArea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                verificarBtn.click();
+            }
+        });
+
+        siguienteBtn.addEventListener('click', () => {
+            misionActual++;
+            if (misionActual < misiones.length) {
+                cargarMision(misionActual);
+            }
+        });
+
+        reiniciarBtn.addEventListener('click', () => {
+            misionActual = 0;
+            puntuacion = 0;
+            cargarMision(misionActual);
+        });
+
+        window.onload = () => {
+            cargarMision(misionActual);
+        };
+    </script>
+</body>
+</html>
